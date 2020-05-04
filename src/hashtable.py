@@ -13,12 +13,12 @@ class LinkedPair:
         while True:
             if self.key == key:
                 self.value = value
-                break
+                return False
             elif self.next:
                 self = self.next
             else:
                 self.next = LinkedPair(key, value)
-                break
+                return True
 
     def delete(self, key):
         if self.key == key:
@@ -49,7 +49,9 @@ class HashTable:
 
     def __init__(self, capacity):
         self.capacity = capacity  # Number of buckets in the hash table
+        self.initial_capacity = capacity
         self.storage = [None] * capacity
+        self.size = 0
 
     def _hash(self, key):
         '''
@@ -92,10 +94,13 @@ class HashTable:
         newElementIndex = self._hash_mod(key)
         # If that position is taken, insert it at the end of the linked list
         if self.storage[newElementIndex]:
-            self.storage[newElementIndex].insert(key, value)
+            if self.storage[newElementIndex].insert(key, value):
+                self.size += 1
         # else, assign new node to empty position
         else:
             self.storage[newElementIndex] = LinkedPair(key, value)
+            self.size += 1
+        self.resize()
 
     def remove(self, key):
         '''
@@ -108,8 +113,10 @@ class HashTable:
         index = self._hash_mod(key)
         if self.storage[index] is not None:
             self.storage[index] = self.storage[index].delete(key)
+            self.size -= 1
         if self.storage[index] is None:
             print('Key not found')
+        self.resize()
 
     def retrieve(self, key):
         '''
@@ -122,6 +129,17 @@ class HashTable:
         index = self._hash_mod(key)
         return self.storage[index].find(key) if self.storage[index] else None
 
+    def __resize_to(self, size):
+        newTable = HashTable(size)
+        for slt in self.storage:
+            if slt:
+                current = slt
+                while current:
+                    newTable.insert(current.key, current.value)
+                    current = current.next
+        self.capacity = newTable.capacity
+        self.storage = newTable.storage
+
     def resize(self):
         '''
         Doubles the capacity of the hash table and
@@ -129,15 +147,11 @@ class HashTable:
 
         Fill this in.
         '''
-        newTable = HashTable(self.capacity*2)
-        for slt in self.storage:
-            if slt:
-                current = slt
-                while current:
-                    newTable.insert(current.key, current.value)
-                    current = current.next
-        self.capacity *= 2
-        self.storage = newTable.storage
+        load_factor = self.size/self.capacity
+        if load_factor > 0.7:
+            self.__resize_to(self.capacity*2)
+        elif self.capacity > self.initial_capacity and load_factor < 0.2:
+            self.__resize_to(self.capacity//2)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,18 @@
-def expensive_seq(x, y, z):
+def expensive_seq(x, y, z, cache={}):
     # Implement me
+    args = (x, y, z)
+    if args in cache:
+        return cache[args]
+    if x <= 0:
+        answer = y+z
+        cache[args] = answer
+        return answer
+    if x > 0:
+        answer = expensive_seq(
+            x-1, y+1, z) + expensive_seq(x-2, y+2, z*2) + expensive_seq(x-3, y+3, z*3)
+        cache[args] = answer
+        return answer
+
 
 if __name__ == "__main__":
     for i in range(10):
